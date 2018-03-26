@@ -28,8 +28,13 @@ public class CameraActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if (null == savedInstanceState) {
+            //add camera fragment
             getFragmentManager().beginTransaction()
                     .replace(R.id.container, Camera2VideoFragment.newInstance())
+                    .commit();
+            //then add map fragment
+            getFragmentManager().beginTransaction()
+                    .replace(R.id.mapContainer, GMapFragment.newInstance())
                     .commit();
         }
     }

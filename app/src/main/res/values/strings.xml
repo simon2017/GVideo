@@ -7,4 +7,5 @@
     <string name="camera_error">This device doesn\'t support Camera2 API.</string>
     <string name="intro_message">Aloja!</string>
     <string name="app_name">GVideo</string>
+    <string name="google_maps_key">AIzaSyCMb66_zMi7y7YrPeU-Yr1_OP8q8XZ23RQ</string>
 </resources>
