@@ -42,7 +42,6 @@ public class LocationHandler implements LocationListener, ActivityCompat.OnReque
 
     public LocationHandler(Activity activity) {
         this.activity = activity;
-        activity.setr
     }
 
     private boolean isNetworkEnabled(LocationManager locationManager) {
@@ -66,6 +65,8 @@ public class LocationHandler implements LocationListener, ActivityCompat.OnReque
     private void requestUpdates(){
         LocationManager locationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LOCATION_PROVIDER, UPDATE_TIME_MILLIS, UPDATE_DISTANCE_METER, this);
+        //set my last known location into map
+        onLocationChanged(locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER));
     }
 
     @Override

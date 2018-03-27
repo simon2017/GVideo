@@ -17,6 +17,7 @@
 package gvideo.sgutierc.cl.test;
 
 import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 
 import gvideo.sgutierc.cl.videorecorder.R;
@@ -25,6 +26,8 @@ public class CameraActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //mantiene pantalla siempre en vision portrait
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if (null == savedInstanceState) {
