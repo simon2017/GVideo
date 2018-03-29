@@ -1,4 +1,4 @@
-package gvideo.sgutierc.cl.test;
+package gvideo.sgutierc.cl.videorecorder;
 
 import android.Manifest;
 import android.app.Activity;
@@ -16,23 +16,23 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
-import com.google.android.gms.maps.model.LatLng;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-import gvideo.sgutierc.cl.videorecorder.R;
+import gvideo.sgutierc.cl.test.Camera2VideoFragment;
+import gvideo.sgutierc.cl.test.PermissionsUtil;
 
 /**
  * Created by sgutierc on 23-03-2018.
  */
 
-public class LocationHandler implements LocationListener, ActivityCompat.OnRequestPermissionsResultCallback {
-    private final String TAG = LocationHandler.class.getName();
+public class LocationEngine implements LocationListener, ActivityCompat.OnRequestPermissionsResultCallback {
+    private final String TAG = LocationEngine.class.getName();
     private final int MY_REQUEST_CODE = 101;
-
+    private CopyOnWriteArrayList<LocationHandler> handlers = null;
     private String LOCATION_PROVIDER = LocationManager.GPS_PROVIDER;
     private long UPDATE_TIME_MILLIS = 5000;
     private float UPDATE_DISTANCE_METER = 10;
     private Activity activity;
-    private GMapFragment mapManager;
 
     private static final String[] LOCATION_PERMISSIONS = {
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -40,8 +40,12 @@ public class LocationHandler implements LocationListener, ActivityCompat.OnReque
     };
 
 
-    public LocationHandler(Activity activity) {
+    /**
+     * @param activity
+     */
+    public LocationEngine(Activity activity) {
         this.activity = activity;
+        this.handlers = new CopyOnWriteArrayList<>();
     }
 
     private boolean isNetworkEnabled(LocationManager locationManager) {
@@ -52,28 +56,42 @@ public class LocationHandler implements LocationListener, ActivityCompat.OnReque
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
     }
 
-    public void startListening(GMapFragment mapManager) {
-        this.mapManager=mapManager;
+    public void addHandler(LocationHandler handler) {
+        this.handlers.add(handler);
+    }
+
+    public void removeHandler(LocationHandler handler) {
+        this.handlers.remove(handler);
+    }
+
+    public void startListening() {
+
         LocationManager locationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
         if (!PermissionsUtil.hasPermissionsGranted(LOCATION_PERMISSIONS, activity)) {
-            PermissionsUtil.requestVideoPermissions(LOCATION_PERMISSIONS,MY_REQUEST_CODE, activity);
+            PermissionsUtil.requestVideoPermissions(LOCATION_PERMISSIONS, MY_REQUEST_CODE, activity);
             return;
         }
         requestUpdates();
     }
+
     @SuppressWarnings("MissingPermission")
-    private void requestUpdates(){
+    private void requestUpdates() {
         LocationManager locationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LOCATION_PROVIDER, UPDATE_TIME_MILLIS, UPDATE_DISTANCE_METER, this);
         //set my last known location into map
-        onLocationChanged(locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER));
+        Location lastKnown = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
+        for (LocationHandler handler : handlers) {
+            handler.handleLocation(lastKnown, LocationHandler.Event.START);
+        }
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        LatLng latLng=new LatLng(location.getLatitude(),location.getLongitude());
-        mapManager.setMyLocation(latLng);
+        for (LocationHandler handler : handlers) {
+            handler.handleLocation(location, LocationHandler.Event.UPDATE);
+        }
     }
+
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -90,28 +108,28 @@ public class LocationHandler implements LocationListener, ActivityCompat.OnReque
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         Log.d(TAG, "onRequestPermissionsResult");
-        boolean granted=true;
+        boolean granted = true;
         if (requestCode == MY_REQUEST_CODE) {
             if (grantResults.length == LOCATION_PERMISSIONS.length) {
                 for (int result : grantResults) {
                     if (result != PackageManager.PERMISSION_GRANTED) {
                         Camera2VideoFragment.ErrorDialog.newInstance(activity.getString(R.string.permission_request))
                                 .show(activity.getFragmentManager(), "dialog");
-                        granted=false;
+                        granted = false;
                         break;
                     }
                 }
             } else {
-                granted=false;
+                granted = false;
                 Camera2VideoFragment.ErrorDialog.newInstance(activity.getString(R.string.permission_request))
                         .show(activity.getFragmentManager(), "dialog");
             }
         } else {
-            granted=false;
-            PermissionsUtil.requestVideoPermissions(LOCATION_PERMISSIONS,MY_REQUEST_CODE, activity);
+            granted = false;
+            PermissionsUtil.requestVideoPermissions(LOCATION_PERMISSIONS, MY_REQUEST_CODE, activity);
         }
 
-        if(granted){
+        if (granted) {
             requestUpdates();
         }
     }

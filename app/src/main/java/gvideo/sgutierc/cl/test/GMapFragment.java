@@ -7,7 +7,6 @@ package gvideo.sgutierc.cl.test;
 import android.app.Fragment;
 import android.location.Location;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,16 +20,18 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import gvideo.sgutierc.cl.videorecorder.LocationEngine;
+import gvideo.sgutierc.cl.videorecorder.LocationHandler;
 import gvideo.sgutierc.cl.videorecorder.R;
 
-public class GMapFragment extends Fragment implements OnMapReadyCallback {
+public class GMapFragment extends Fragment implements OnMapReadyCallback, LocationHandler {
 
     private GoogleMap mMap;
-    private LocationHandler locationHandler;
+
+
     @Override
     public void onStart() {
         super.onStart();
-        locationHandler=new LocationHandler(this.getActivity());
         MapFragment mapFragment = (MapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         if (mapFragment != null)
             mapFragment.getMapAsync(this);
@@ -44,12 +45,15 @@ public class GMapFragment extends Fragment implements OnMapReadyCallback {
     private LatLng myLocation;
     private Marker thisIsMe;
 
+    /**
+     *
+     * @param location
+     */
     public void setMyLocation(LatLng location) {
         if (thisIsMe == null) {
             MarkerOptions markerOpt = new MarkerOptions().position(location).title("Marker in Sydney");
             thisIsMe = mMap.addMarker(markerOpt);
-        }
-        else
+        } else
             thisIsMe.setPosition(location);
 
         CameraPosition cameraPosition = new CameraPosition.Builder()
@@ -61,10 +65,20 @@ public class GMapFragment extends Fragment implements OnMapReadyCallback {
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
 
+    private LatLng lastKnown;
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        locationHandler.startListening(this);
+        if (lastKnown != null) setMyLocation(lastKnown);
+    }
+
+    @Override
+    public void handleLocation(Location location, Event event) {
+        if (mMap != null)
+            setMyLocation(new LatLng(location.getLatitude(), location.getLongitude()));
+        else
+            lastKnown = new LatLng(location.getLatitude(), location.getLongitude());
     }
 
     public static GMapFragment newInstance() {

@@ -20,9 +20,12 @@ import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 
+import gvideo.sgutierc.cl.videorecorder.LocationEngine;
+import gvideo.sgutierc.cl.videorecorder.LocationRecorder;
 import gvideo.sgutierc.cl.videorecorder.R;
 
 public class CameraActivity extends Activity {
+    private LocationEngine locationEngine;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,14 +34,24 @@ public class CameraActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if (null == savedInstanceState) {
+
+            locationEngine = new LocationEngine(this);
+
             //add camera fragment
-            getFragmentManager().beginTransaction()
-                    .replace(R.id.container, Camera2VideoFragment.newInstance())
-                    .commit();
+            Camera2VideoFragment cameraFragment = Camera2VideoFragment.newInstance();
+            getFragmentManager().beginTransaction().replace(R.id.container, cameraFragment).commit();
+
             //then add map fragment
-            getFragmentManager().beginTransaction()
-                    .replace(R.id.mapContainer, GMapFragment.newInstance())
-                    .commit();
+            GMapFragment mapFragment = GMapFragment.newInstance();
+            getFragmentManager().beginTransaction().replace(R.id.mapContainer, mapFragment).commit();
+
+            //and now start listening locations
+            LocationRecorder recorder = new LocationRecorder(this);
+            recorder.init();
+            locationEngine.addHandler(mapFragment);
+            locationEngine.addHandler(recorder);
+            locationEngine.startListening();
+
         }
     }
 

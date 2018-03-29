@@ -8,4 +8,7 @@
     <string name="intro_message">Aloja!</string>
     <string name="app_name">GVideo</string>
     <string name="google_maps_key">AIzaSyCMb66_zMi7y7YrPeU-Yr1_OP8q8XZ23RQ</string>
+    <string name="create_tables">create table Location (lapsetime integer primary key,altitude REAL,longitude REAL,latitude REAL,speed REAL,accuracy REAL);</string>
+    <string name="delete_tables">drop table Location;</string>
+    <string name="insert_values">insert into Location(lapsetime,altitude,longitude,latitude,speed,accuracy) values(?,?,?,?,?,?)</string>
 </resources>
