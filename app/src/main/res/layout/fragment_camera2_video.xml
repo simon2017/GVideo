@@ -18,7 +18,7 @@
     android:layout_height="match_parent"
     android:layout_gravity="center_vertical">
 
-    <gvideo.sgutierc.cl.test.AutoFitTextureView
+    <gvideo.sgutierc.cl.view.AutoFitTextureView
         android:id="@+id/texture"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

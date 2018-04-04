@@ -1,4 +1,4 @@
-package gvideo.sgutierc.cl.test;
+package gvideo.sgutierc.cl.util;
 
 import android.app.Activity;
 import android.graphics.Matrix;
@@ -10,6 +10,9 @@ import android.view.Surface;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import gvideo.sgutierc.cl.view.AutoFitTextureView;
+import gvideo.sgutierc.cl.view.Camera2VideoFragment;
 
 /**
  * Created by sgutierc on 23-03-2018.

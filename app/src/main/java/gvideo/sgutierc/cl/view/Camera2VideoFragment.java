@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package gvideo.sgutierc.cl.test;
+package gvideo.sgutierc.cl.view;
 
 import android.Manifest;
 import android.app.Activity;
@@ -165,7 +165,7 @@ public class Camera2VideoFragment extends Fragment
     /**
      * Compares two {@code Size}s based on their areas.
      */
-    static class CompareSizesByArea implements Comparator<Size> {
+    public static class CompareSizesByArea implements Comparator<Size> {
 
         @Override
         public int compare(Size lhs, Size rhs) {

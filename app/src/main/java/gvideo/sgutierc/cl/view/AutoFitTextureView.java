@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package gvideo.sgutierc.cl.test;
+package gvideo.sgutierc.cl.view;
 
 import android.content.Context;
 import android.util.AttributeSet;

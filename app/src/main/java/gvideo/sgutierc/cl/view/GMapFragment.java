@@ -1,4 +1,4 @@
-package gvideo.sgutierc.cl.test;
+package gvideo.sgutierc.cl.view;
 
 /**
  * Created by sgutierc on 23-03-2018.
@@ -20,8 +20,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import gvideo.sgutierc.cl.videorecorder.LocationEngine;
-import gvideo.sgutierc.cl.videorecorder.LocationHandler;
+import gvideo.sgutierc.cl.location.LocationHandler;
 import gvideo.sgutierc.cl.videorecorder.R;
 
 public class GMapFragment extends Fragment implements OnMapReadyCallback, LocationHandler {

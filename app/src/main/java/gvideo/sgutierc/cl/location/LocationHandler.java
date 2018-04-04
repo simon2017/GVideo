@@ -1,4 +1,4 @@
-package gvideo.sgutierc.cl.videorecorder;
+package gvideo.sgutierc.cl.location;
 
 import android.location.Location;
 

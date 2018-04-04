@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package gvideo.sgutierc.cl.test;
+package gvideo.sgutierc.cl;
 
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 
 import gvideo.sgutierc.cl.videorecorder.LocationEngine;
-import gvideo.sgutierc.cl.videorecorder.LocationRecorder;
+import gvideo.sgutierc.cl.location.LocationRecorder;
 import gvideo.sgutierc.cl.videorecorder.R;
+import gvideo.sgutierc.cl.view.Camera2VideoFragment;
+import gvideo.sgutierc.cl.view.GMapFragment;
 
 public class CameraActivity extends Activity {
     private LocationEngine locationEngine;

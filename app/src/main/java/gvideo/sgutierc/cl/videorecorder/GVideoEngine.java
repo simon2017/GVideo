@@ -47,12 +47,12 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import gvideo.sgutierc.cl.test.AutoFitTextureView;
-import gvideo.sgutierc.cl.test.Camera2VideoFragment;
-import gvideo.sgutierc.cl.test.ViewFunctions;
+import gvideo.sgutierc.cl.view.AutoFitTextureView;
+import gvideo.sgutierc.cl.view.Camera2VideoFragment;
+import gvideo.sgutierc.cl.util.ViewFunctions;
 
-import static gvideo.sgutierc.cl.test.ViewFunctions.chooseOptimalSize;
-import static gvideo.sgutierc.cl.test.ViewFunctions.configureTransform;
+import static gvideo.sgutierc.cl.util.ViewFunctions.chooseOptimalSize;
+import static gvideo.sgutierc.cl.util.ViewFunctions.configureTransform;
 
 public class GVideoEngine{
 

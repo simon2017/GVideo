@@ -18,8 +18,9 @@ import android.util.Log;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import gvideo.sgutierc.cl.test.Camera2VideoFragment;
-import gvideo.sgutierc.cl.test.PermissionsUtil;
+import gvideo.sgutierc.cl.location.LocationHandler;
+import gvideo.sgutierc.cl.view.Camera2VideoFragment;
+import gvideo.sgutierc.cl.util.PermissionsUtil;
 
 /**
  * Created by sgutierc on 23-03-2018.

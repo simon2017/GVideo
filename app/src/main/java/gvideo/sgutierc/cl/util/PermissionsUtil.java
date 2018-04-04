@@ -1,4 +1,4 @@
-package gvideo.sgutierc.cl.test;
+package gvideo.sgutierc.cl.util;
 
 import android.app.Activity;
 import android.app.AlertDialog;

@@ -1,4 +1,4 @@
-package gvideo.sgutierc.cl.videorecorder;
+package gvideo.sgutierc.cl.location;
 
 import android.app.Activity;
 import android.database.sqlite.SQLiteDatabase;
@@ -7,6 +7,9 @@ import android.location.Location;
 import android.util.Log;
 
 import java.io.File;
+
+import gvideo.sgutierc.cl.videorecorder.DBHelper;
+import gvideo.sgutierc.cl.videorecorder.R;
 
 public class LocationRecorder implements LocationHandler {
     private Activity activity;
