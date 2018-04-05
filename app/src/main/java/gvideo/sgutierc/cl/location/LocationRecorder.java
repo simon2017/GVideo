@@ -1,6 +1,7 @@
 package gvideo.sgutierc.cl.location;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.location.Location;
@@ -16,7 +17,13 @@ public class LocationRecorder implements LocationHandler {
     private String TAG = LocationRecorder.class.getName();
     private DBHelper dbHelper = null;
     private SQLiteDatabase database = null;
-    private String insertStatement = null;
+    private String TABLE_NAME;
+    private String LATITUDE;
+    private String LONGITUDE;
+    private String ALTITUDE;
+    private String SPEED;
+    private String ACCURACY;
+    private String LAPSETIME;
 
     /**
      * @param activity
@@ -32,7 +39,13 @@ public class LocationRecorder implements LocationHandler {
         boolean safeInit = true;
         try {
             database = createTempDB();
-            insertStatement = activity.getString(R.string.insert_values);
+            TABLE_NAME = activity.getString(R.string.TABLE_NAME);
+            LATITUDE = activity.getString(R.string.LATITUDE);
+            LONGITUDE = activity.getString(R.string.LONGITUDE);
+            ALTITUDE = activity.getString(R.string.ALTITUDE);
+            SPEED = activity.getString(R.string.SPEED);
+            ACCURACY = activity.getString(R.string.ACCURACY);
+            LAPSETIME = activity.getString(R.string.LAPSETIME);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
             safeInit = false;
@@ -44,6 +57,7 @@ public class LocationRecorder implements LocationHandler {
     private SQLiteDatabase createTempDB() throws Exception {
         File outputDir = activity.getCacheDir(); // context being the Activity pointer
         File tmpDB = File.createTempFile("location", "tmp", outputDir);
+        Log.i(TAG,tmpDB.getAbsolutePath());
         SQLiteDatabase database = null;
         try {
             dbHelper = new DBHelper(activity, tmpDB.getPath());
@@ -70,8 +84,16 @@ public class LocationRecorder implements LocationHandler {
             double altitude = location.getAltitude();
             double accuracy = location.getAccuracy();
             double speed = location.getSpeed();
-            
-            database.execSQL(insertStatement, new Object[]{elapsedTime, altitude, longitude, latitude, speed, accuracy});
+
+            ContentValues values = new ContentValues();
+            values.put(LAPSETIME, elapsedTime);
+            values.put(LATITUDE, latitude);
+            values.put(LONGITUDE, longitude);
+            values.put(ALTITUDE, altitude);
+            values.put(ACCURACY, accuracy);
+            values.put(SPEED, speed);
+
+            database.insert(TABLE_NAME, null, values);
 
         } catch (Exception ex) {
             Log.e(TAG, ex.getMessage(), ex);

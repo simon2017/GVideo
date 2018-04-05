@@ -40,6 +40,7 @@ import android.widget.Button;
 import java.io.File;
 import java.util.Comparator;
 
+import gvideo.sgutierc.cl.util.PermissionsUtil;
 import gvideo.sgutierc.cl.videorecorder.GVideoEngine;
 import gvideo.sgutierc.cl.videorecorder.R;
 
@@ -53,7 +54,7 @@ public class Camera2VideoFragment extends Fragment
 
     private static final String[] VIDEO_PERMISSIONS = {
             Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.RECORD_AUDIO
     };
 
     /**
@@ -85,18 +86,34 @@ public class Camera2VideoFragment extends Fragment
         mButtonVideo = (Button) getActivity().findViewById(R.id.recordButton);
         mButtonVideo.setOnClickListener(this);
         getActivity().findViewById(R.id.infoButton).setOnClickListener(this);
-        this.gVideoEngine = new GVideoEngine(getActivity(), mTextureView,this);
+        reviewPermissions();
+    }
+
+    private void reviewPermissions() {
+        if (PermissionsUtil.hasPermissionsGranted(VIDEO_PERMISSIONS, this.getActivity()) == false) {
+            PermissionsUtil.requestVideoPermissions(VIDEO_PERMISSIONS, MY_REQUEST_CODE, this.getActivity());
+            return;
+        } else
+            startMagic();
+
+    }
+
+    private void startMagic() {
+        if (gVideoEngine == null)
+            this.gVideoEngine = new GVideoEngine(getActivity(), mTextureView, this);
+        gVideoEngine.resume();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        gVideoEngine.resume();
+        reviewPermissions();
     }
 
     @Override
     public void onPause() {
-        gVideoEngine.pause();
+        if (gVideoEngine != null)
+            gVideoEngine.pause();
         super.onPause();
     }
 
@@ -127,6 +144,7 @@ public class Camera2VideoFragment extends Fragment
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
+        boolean granted = true;
         Log.d(TAG, "onRequestPermissionsResult");
         if (requestCode == MY_REQUEST_CODE) {
             if (grantResults.length == VIDEO_PERMISSIONS.length) {
@@ -134,22 +152,25 @@ public class Camera2VideoFragment extends Fragment
                     if (result != PackageManager.PERMISSION_GRANTED) {
                         ErrorDialog.newInstance(getString(R.string.permission_request))
                                 .show(getChildFragmentManager(), FRAGMENT_DIALOG);
+                        granted = false;
                         break;
                     }
                 }
             } else {
+                granted = false;
                 ErrorDialog.newInstance(getString(R.string.permission_request))
                         .show(getChildFragmentManager(), FRAGMENT_DIALOG);
             }
         } else {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            granted = false;
+            PermissionsUtil.requestVideoPermissions(VIDEO_PERMISSIONS, MY_REQUEST_CODE, this.getActivity());
+        }
+
+        if (granted) {
+            startMagic();
         }
     }
 
-
-    private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder) {
-        builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-    }
 
     @Override
     public String getPath() {

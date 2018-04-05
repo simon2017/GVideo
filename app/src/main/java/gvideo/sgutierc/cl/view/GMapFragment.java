@@ -17,6 +17,7 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -45,7 +46,6 @@ public class GMapFragment extends Fragment implements OnMapReadyCallback, Locati
     private Marker thisIsMe;
 
     /**
-     *
      * @param location
      */
     public void setMyLocation(LatLng location) {
@@ -69,11 +69,14 @@ public class GMapFragment extends Fragment implements OnMapReadyCallback, Locati
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(
+                getActivity(), R.raw.mapa_style));
         if (lastKnown != null) setMyLocation(lastKnown);
     }
 
     @Override
     public void handleLocation(Location location, Event event) {
+        if (location == null) return;
         if (mMap != null)
             setMyLocation(new LatLng(location.getLatitude(), location.getLongitude()));
         else
