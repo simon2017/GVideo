@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import gvideo.sgutierc.cl.location.LocationRecorder;
 import gvideo.sgutierc.cl.view.AutoFitTextureView;
 import gvideo.sgutierc.cl.view.Camera2VideoFragment;
 import gvideo.sgutierc.cl.util.ViewFunctions;
@@ -54,7 +55,7 @@ import gvideo.sgutierc.cl.util.ViewFunctions;
 import static gvideo.sgutierc.cl.util.ViewFunctions.chooseOptimalSize;
 import static gvideo.sgutierc.cl.util.ViewFunctions.configureTransform;
 
-public class GVideoEngine{
+public class GVideoEngine {
 
     private static final int MY_REQUEST_CODE = 100;
 
@@ -135,6 +136,7 @@ public class GVideoEngine{
     public interface PathProvider {
         String getPath();
     }
+
     /**
      * The {@link android.util.Size} of camera preview.
      */
@@ -210,11 +212,14 @@ public class GVideoEngine{
     private CaptureRequest.Builder mPreviewBuilder;
     private Activity activity;
     private PathProvider pathProvider;
+    private LocationRecorder recorder;
 
     public GVideoEngine(Activity activity, AutoFitTextureView mTextureView, PathProvider pathProvider) {
         this.activity = activity;
-        this.mTextureView=mTextureView;
-        this.pathProvider=pathProvider;
+        this.mTextureView = mTextureView;
+        this.pathProvider = pathProvider;
+        //and now start listening locations
+        recorder = new LocationRecorder(activity);
     }
 
     protected Activity getActivity() {
@@ -374,11 +379,15 @@ public class GVideoEngine{
         builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
     }
 
-    public void startRecordingVideo() {
+    public void startRecordingVideo(LocationEngine locationEngine) {
         if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
             return;
         }
         try {
+            //inicia mecanismo de geolocalización
+            recorder.init();
+            locationEngine.addHandler(recorder);
+
             closePreviewSession();
             setUpMediaRecorder();
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
@@ -435,10 +444,9 @@ public class GVideoEngine{
         mMediaRecorder.prepare();
     }
 
-    public boolean isRecording(){
+    public boolean isRecording() {
         return this.mIsRecordingVideo;
     }
-
 
 
     private void closePreviewSession() {
@@ -448,13 +456,15 @@ public class GVideoEngine{
         }
     }
 
-    public void stopRecordingVideo() {
+    public void stopRecordingVideo(LocationEngine locationEngine) {
         // UI
         mIsRecordingVideo = false;
         // Stop recording
         mMediaRecorder.stop();
         mMediaRecorder.reset();
 
+        //Stop listening GPS data
+        locationEngine.removeHandler(recorder);
         Activity activity = getActivity();
         if (null != activity) {
             Toast.makeText(activity, "Video saved: " + mNextVideoAbsolutePath,
@@ -465,12 +475,14 @@ public class GVideoEngine{
         startPreview();
     }
 
-    private class RecordCallback extends CameraCaptureSession.StateCallback implements Runnable{
+    private class RecordCallback extends CameraCaptureSession.StateCallback implements Runnable {
 
         private GVideoEngine superInstance;
-        public RecordCallback(GVideoEngine superInstance){
-            this.superInstance=superInstance;
+
+        public RecordCallback(GVideoEngine superInstance) {
+            this.superInstance = superInstance;
         }
+
         @Override
         public void run() {
             // UI
@@ -479,6 +491,7 @@ public class GVideoEngine{
             // Start recording
             superInstance.mMediaRecorder.start();
         }
+
         @Override
         public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
             superInstance.mPreviewSession = cameraCaptureSession;
@@ -495,16 +508,19 @@ public class GVideoEngine{
         }
     }
 
-    private class PreviewCallback extends CameraCaptureSession.StateCallback{
+    private class PreviewCallback extends CameraCaptureSession.StateCallback {
         private GVideoEngine superInstance;
-        public PreviewCallback(GVideoEngine superInstance){
-            this.superInstance=superInstance;
+
+        public PreviewCallback(GVideoEngine superInstance) {
+            this.superInstance = superInstance;
         }
+
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {
             superInstance.mPreviewSession = session;
             superInstance.updatePreview();
         }
+
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
             Activity activity = superInstance.getActivity();

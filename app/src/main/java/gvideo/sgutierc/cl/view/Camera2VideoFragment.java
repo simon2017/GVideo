@@ -25,8 +25,6 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.hardware.camera2.CameraMetadata;
-import android.hardware.camera2.CaptureRequest;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v13.app.FragmentCompat;
@@ -42,6 +40,7 @@ import java.util.Comparator;
 
 import gvideo.sgutierc.cl.util.PermissionsUtil;
 import gvideo.sgutierc.cl.videorecorder.GVideoEngine;
+import gvideo.sgutierc.cl.videorecorder.LocationEngine;
 import gvideo.sgutierc.cl.videorecorder.R;
 
 public class Camera2VideoFragment extends Fragment
@@ -122,9 +121,9 @@ public class Camera2VideoFragment extends Fragment
         switch (view.getId()) {
             case R.id.recordButton: {
                 if (gVideoEngine.isRecording()) {
-                    gVideoEngine.stopRecordingVideo();
+                    gVideoEngine.stopRecordingVideo(locationEngine);
                 } else {
-                    gVideoEngine.startRecordingVideo();
+                    gVideoEngine.startRecordingVideo(locationEngine);
                 }
                 break;
             }
@@ -181,6 +180,12 @@ public class Camera2VideoFragment extends Fragment
         final File dir = context.getExternalFilesDir(null);
         return (dir == null ? "" : (dir.getAbsolutePath() + "/"))
                 + System.currentTimeMillis() + ".mp4";
+    }
+
+    private LocationEngine locationEngine;
+
+    public void setLocationEngine(LocationEngine locationEngine) {
+        this.locationEngine = locationEngine;
     }
 
     /**

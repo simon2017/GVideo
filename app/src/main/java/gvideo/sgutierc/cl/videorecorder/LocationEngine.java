@@ -62,7 +62,8 @@ public class LocationEngine implements LocationListener, ActivityCompat.OnReques
     }
 
     public void removeHandler(LocationHandler handler) {
-        this.handlers.remove(handler);
+        if (handler != null)
+            this.handlers.remove(handler);
     }
 
     public void startListening() {

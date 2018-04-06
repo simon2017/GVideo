@@ -21,7 +21,6 @@ import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 
 import gvideo.sgutierc.cl.videorecorder.LocationEngine;
-import gvideo.sgutierc.cl.location.LocationRecorder;
 import gvideo.sgutierc.cl.videorecorder.R;
 import gvideo.sgutierc.cl.view.Camera2VideoFragment;
 import gvideo.sgutierc.cl.view.GMapFragment;
@@ -42,18 +41,14 @@ public class CameraActivity extends Activity {
             //add camera fragment
             Camera2VideoFragment cameraFragment = Camera2VideoFragment.newInstance();
             getFragmentManager().beginTransaction().replace(R.id.container, cameraFragment).commit();
+            cameraFragment.setLocationEngine(locationEngine);
 
             //then add map fragment
             GMapFragment mapFragment = GMapFragment.newInstance();
             getFragmentManager().beginTransaction().replace(R.id.mapContainer, mapFragment).commit();
 
-            //and now start listening locations
-            LocationRecorder recorder = new LocationRecorder(this);
-            recorder.init();
             locationEngine.addHandler(mapFragment);
-            locationEngine.addHandler(recorder);
             locationEngine.startListening();
-
         }
     }
 
