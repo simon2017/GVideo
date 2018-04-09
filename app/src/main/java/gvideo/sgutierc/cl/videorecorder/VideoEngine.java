@@ -48,14 +48,15 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import gvideo.sgutierc.cl.location.LocationRecorder;
+import gvideo.sgutierc.cl.util.Miscelaneous;
+import gvideo.sgutierc.cl.util.ViewFunctions;
 import gvideo.sgutierc.cl.view.AutoFitTextureView;
 import gvideo.sgutierc.cl.view.Camera2VideoFragment;
-import gvideo.sgutierc.cl.util.ViewFunctions;
 
 import static gvideo.sgutierc.cl.util.ViewFunctions.chooseOptimalSize;
 import static gvideo.sgutierc.cl.util.ViewFunctions.configureTransform;
 
-public class GVideoEngine {
+public class VideoEngine implements Recorder {
 
     private static final int MY_REQUEST_CODE = 100;
 
@@ -180,7 +181,7 @@ public class GVideoEngine {
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
             mCameraDevice = cameraDevice;
-            startPreview();
+            loadPreview();
             mCameraOpenCloseLock.release();
             if (null != mTextureView) {
                 configureTransform(mTextureView.getWidth(), mTextureView.getHeight(), mTextureView, mPreviewSize, getActivity());
@@ -213,32 +214,19 @@ public class GVideoEngine {
     private Activity activity;
     private PathProvider pathProvider;
     private LocationRecorder recorder;
+    private LocationEngine locationEngine;
 
-    public GVideoEngine(Activity activity, AutoFitTextureView mTextureView, PathProvider pathProvider) {
+    public VideoEngine(Activity activity, AutoFitTextureView mTextureView, PathProvider pathProvider, LocationEngine locationEngine) {
         this.activity = activity;
         this.mTextureView = mTextureView;
         this.pathProvider = pathProvider;
+        this.locationEngine = locationEngine;
         //and now start listening locations
         recorder = new LocationRecorder(activity);
     }
 
     protected Activity getActivity() {
         return this.activity;
-    }
-
-
-    public void resume() {
-        startBackgroundThread();
-        if (mTextureView.isAvailable()) {
-            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
-        } else {
-            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
-        }
-    }
-
-    public void pause() {
-        closeCamera();
-        stopBackgroundThread();
     }
 
     /**
@@ -316,6 +304,7 @@ public class GVideoEngine {
         }
     }
 
+
     public void closeCamera() {
         try {
             mCameraOpenCloseLock.acquire();
@@ -332,29 +321,6 @@ public class GVideoEngine {
             throw new RuntimeException("Interrupted while trying to lock camera closing.");
         } finally {
             mCameraOpenCloseLock.release();
-        }
-    }
-
-    /**
-     * Start the camera preview.
-     */
-    public void startPreview() {
-        if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
-            return;
-        }
-        try {
-            closePreviewSession();
-            SurfaceTexture texture = mTextureView.getSurfaceTexture();
-            assert texture != null;
-            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-
-            Surface previewSurface = new Surface(texture);
-            mPreviewBuilder.addTarget(previewSurface);
-
-            mCameraDevice.createCaptureSession(Collections.singletonList(previewSurface), new PreviewCallback(this), mBackgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
         }
     }
 
@@ -377,42 +343,6 @@ public class GVideoEngine {
 
     private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder) {
         builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-    }
-
-    public void startRecordingVideo(LocationEngine locationEngine) {
-        if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
-            return;
-        }
-        try {
-            //inicia mecanismo de geolocalización
-            recorder.init();
-            locationEngine.addHandler(recorder);
-
-            closePreviewSession();
-            setUpMediaRecorder();
-            SurfaceTexture texture = mTextureView.getSurfaceTexture();
-            assert texture != null;
-            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-            List<Surface> surfaces = new ArrayList<>();
-
-            // Set up Surface for the camera preview
-            Surface previewSurface = new Surface(texture);
-            surfaces.add(previewSurface);
-            mPreviewBuilder.addTarget(previewSurface);
-
-            // Set up Surface for the MediaRecorder
-            Surface recorderSurface = mMediaRecorder.getSurface();
-            surfaces.add(recorderSurface);
-            mPreviewBuilder.addTarget(recorderSurface);
-
-            // Start a capture session
-            // Once the session starts, we can update the UI and start recording
-            mCameraDevice.createCaptureSession(surfaces, new RecordCallback(this), mBackgroundHandler);
-        } catch (CameraAccessException | IOException e) {
-            e.printStackTrace();
-        }
-
     }
 
     private void setUpMediaRecorder() throws IOException {
@@ -456,30 +386,12 @@ public class GVideoEngine {
         }
     }
 
-    public void stopRecordingVideo(LocationEngine locationEngine) {
-        // UI
-        mIsRecordingVideo = false;
-        // Stop recording
-        mMediaRecorder.stop();
-        mMediaRecorder.reset();
-
-        //Stop listening GPS data
-        locationEngine.removeHandler(recorder);
-        Activity activity = getActivity();
-        if (null != activity) {
-            Toast.makeText(activity, "Video saved: " + mNextVideoAbsolutePath,
-                    Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Video saved: " + mNextVideoAbsolutePath);
-        }
-        mNextVideoAbsolutePath = null;
-        startPreview();
-    }
 
     private class RecordCallback extends CameraCaptureSession.StateCallback implements Runnable {
 
-        private GVideoEngine superInstance;
+        private VideoEngine superInstance;
 
-        public RecordCallback(GVideoEngine superInstance) {
+        public RecordCallback(VideoEngine superInstance) {
             this.superInstance = superInstance;
         }
 
@@ -509,9 +421,9 @@ public class GVideoEngine {
     }
 
     private class PreviewCallback extends CameraCaptureSession.StateCallback {
-        private GVideoEngine superInstance;
+        private VideoEngine superInstance;
 
-        public PreviewCallback(GVideoEngine superInstance) {
+        public PreviewCallback(VideoEngine superInstance) {
             this.superInstance = superInstance;
         }
 
@@ -528,6 +440,132 @@ public class GVideoEngine {
                 Toast.makeText(activity, "Failed", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+
+    public void startRecording() {
+
+        if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
+            return;
+        }
+        try {
+            //inicia mecanismo de geolocalización
+            recorder.init();
+            recorder.start(locationEngine);
+
+            closePreviewSession();
+            setUpMediaRecorder();
+            SurfaceTexture texture = mTextureView.getSurfaceTexture();
+            assert texture != null;
+            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+            mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            List<Surface> surfaces = new ArrayList<>();
+
+            // Set up Surface for the camera preview
+            Surface previewSurface = new Surface(texture);
+            surfaces.add(previewSurface);
+            mPreviewBuilder.addTarget(previewSurface);
+
+            // Set up Surface for the MediaRecorder
+            Surface recorderSurface = mMediaRecorder.getSurface();
+            surfaces.add(recorderSurface);
+            mPreviewBuilder.addTarget(recorderSurface);
+
+            // Start a capture session
+            // Once the session starts, we can update the UI and start recording
+            mCameraDevice.createCaptureSession(surfaces, new RecordCallback(this), mBackgroundHandler);
+        } catch (CameraAccessException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void stopRecording() {
+        // UI
+        mIsRecordingVideo = false;
+        // Stop recording
+        mMediaRecorder.stop();
+        mMediaRecorder.reset();
+
+        //Stop listening GPS data
+        //TODO guardar en metadata de archivo
+        locationEngine.removeHandler(recorder);
+        recorder.stop();
+        try {
+            byte[] locations = recorder.getBytes();
+            System.out.println(Miscelaneous.print(locations));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Activity activity = getActivity();
+        if (null != activity) {
+            Toast.makeText(activity, "Video saved: " + mNextVideoAbsolutePath,
+                    Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Video saved: " + mNextVideoAbsolutePath);
+        }
+        mNextVideoAbsolutePath = null;
+        startPreview();
+    }
+
+    public void pauseRecording() {
+//TODO
+    }
+
+    public void resumeRecording() {
+//TODO
+    }
+
+
+    /**
+     * Previewing methods
+     */
+    protected void loadPreview() {
+        if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
+            return;
+        }
+        try {
+            closePreviewSession();
+            SurfaceTexture texture = mTextureView.getSurfaceTexture();
+            assert texture != null;
+            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+            mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+
+            Surface previewSurface = new Surface(texture);
+            mPreviewBuilder.addTarget(previewSurface);
+
+            mCameraDevice.createCaptureSession(Collections.singletonList(previewSurface), new PreviewCallback(this), mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void pausePreview() {
+        closeCamera();
+        stopBackgroundThread();
+    }
+
+    public void startPreview() {
+        startBackgroundThread();
+        if (mTextureView.isAvailable()) {
+            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+        } else {
+            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+        }
+    }
+
+    public void resumePreview(){
+        startBackgroundThread();
+        if (mTextureView.isAvailable()) {
+            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+        } else {
+            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+        }
+    }
+
+
+    public void stopPreview() {
+        //TODO
+        closeCamera();
+        stopBackgroundThread();
     }
 
 }

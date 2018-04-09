@@ -50,7 +50,8 @@ public class GMapFragment extends Fragment implements OnMapReadyCallback, Locati
      */
     public void setMyLocation(LatLng location) {
         if (thisIsMe == null) {
-            MarkerOptions markerOpt = new MarkerOptions().position(location).title("Marker in Sydney");
+            String title=getActivity().getString(R.string.mapa_mi_ubicacion);
+            MarkerOptions markerOpt = new MarkerOptions().position(location).title(title);
             thisIsMe = mMap.addMarker(markerOpt);
         } else
             thisIsMe.setPosition(location);

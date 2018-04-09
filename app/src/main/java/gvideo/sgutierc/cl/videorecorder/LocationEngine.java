@@ -59,6 +59,8 @@ public class LocationEngine implements LocationListener, ActivityCompat.OnReques
 
     public void addHandler(LocationHandler handler) {
         this.handlers.add(handler);
+        if(lastKnown!=null)
+            handler.handleLocation(lastKnown, LocationHandler.Event.START);
     }
 
     public void removeHandler(LocationHandler handler) {
@@ -75,13 +77,14 @@ public class LocationEngine implements LocationListener, ActivityCompat.OnReques
         }
         requestUpdates();
     }
+    private Location lastKnown;
 
     @SuppressWarnings("MissingPermission")
     private void requestUpdates() {
         LocationManager locationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LOCATION_PROVIDER, UPDATE_TIME_MILLIS, UPDATE_DISTANCE_METER, this);
         //set my last known location into map
-        Location lastKnown = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
+        lastKnown = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
         for (LocationHandler handler : handlers) {
             handler.handleLocation(lastKnown, LocationHandler.Event.START);
         }

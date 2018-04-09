@@ -8,8 +8,15 @@ import android.location.Location;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.concurrent.TimeUnit;
 
+import gvideo.sgutierc.cl.util.Watch;
 import gvideo.sgutierc.cl.videorecorder.DBHelper;
+import gvideo.sgutierc.cl.videorecorder.LocationEngine;
 import gvideo.sgutierc.cl.videorecorder.R;
 
 public class LocationRecorder implements LocationHandler {
@@ -54,10 +61,12 @@ public class LocationRecorder implements LocationHandler {
         return safeInit;
     }
 
+    private File tmpDB;
+
     private SQLiteDatabase createTempDB() throws Exception {
         File outputDir = activity.getCacheDir(); // context being the Activity pointer
-        File tmpDB = File.createTempFile("location", "tmp", outputDir);
-        Log.i(TAG,tmpDB.getAbsolutePath());
+        tmpDB = File.createTempFile("location", "tmp", outputDir);
+        Log.i(TAG, tmpDB.getAbsolutePath());
         SQLiteDatabase database = null;
         try {
             dbHelper = new DBHelper(activity, tmpDB.getPath());
@@ -70,14 +79,56 @@ public class LocationRecorder implements LocationHandler {
         return database;
     }
 
+    private Watch watch;
+
+    public void start(LocationEngine engine) {
+        watch = new Watch();
+        watch.start();
+    }
+
+    private boolean paused = false;
+
+    public void pause() {
+        paused = true;
+        watch.pause();
+    }
+
+    public void resume() {
+        paused = false;
+        watch.resume();
+    }
+
+    public void stop() {
+        database.close();
+        database = null;
+
+    }
+
+    public byte[] getBytes() throws IOException {
+        byte[] byteArray = null;
+
+        int byteLength = (int) tmpDB.length();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(byteLength);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+
+        FileInputStream fileInputStream = new FileInputStream(tmpDB);
+        byte[] buffer = new byte[1024];
+        int len = 0;
+        while ((len = fileInputStream.read(buffer)) != -1) {
+            byteBuffer.put(buffer, 0, len);
+        }
+        fileInputStream.close();
+        fileInputStream = null;
+
+        return byteBuffer.array();
+    }
+
     @Override
     public void handleLocation(Location location, Event event) {
-        //TODO guardar en bd temporal
+        if (paused == true) return;
 
         try {
-            long elapsedTime = location.getElapsedRealtimeNanos();
-            if (event == Event.START)
-                elapsedTime = 0;//marca el inicio
+            long elapsedTime = watch.getElapsedTime(TimeUnit.MILLISECONDS);
 
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
