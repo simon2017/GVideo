@@ -1,5 +1,8 @@
 package gvideo.sgutierc.cl.videorecorder;
 
+/**
+ * Define metodos base para una grabadora de videos
+ */
 public interface Recorder
 {
     /**

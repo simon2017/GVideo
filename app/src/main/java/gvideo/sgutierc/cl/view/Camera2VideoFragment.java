@@ -39,6 +39,7 @@ import java.io.File;
 import java.util.Comparator;
 
 import gvideo.sgutierc.cl.util.PermissionsUtil;
+import gvideo.sgutierc.cl.videorecorder.GeoVideoEngine;
 import gvideo.sgutierc.cl.videorecorder.LocationEngine;
 import gvideo.sgutierc.cl.videorecorder.R;
 import gvideo.sgutierc.cl.videorecorder.VideoEngine;
@@ -79,7 +80,7 @@ public class Camera2VideoFragment extends Fragment
         return inflater.inflate(R.layout.fragment_camera2_video, container, false);
     }
 
-    private VideoEngine videoEngine;
+    private GeoVideoEngine gvideoEngine;
 
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
@@ -99,13 +100,13 @@ public class Camera2VideoFragment extends Fragment
     }
 
     private void startMagic() {
-        if (videoEngine == null) {//new initiation, lets start the preview..
-            this.videoEngine = new VideoEngine(getActivity(), mTextureView, this, locationEngine);
-            videoEngine.startPreview();
-        } else if (videoEngine.isRecording() == false) //comming back from pause.. will check if resume recording or previewing
-            videoEngine.resumePreview();
+        if (gvideoEngine == null) {//new initiation, lets start the preview..
+            this.gvideoEngine = new GeoVideoEngine(getActivity(), mTextureView, this, locationEngine);
+            gvideoEngine.startPreview();
+        } else if (gvideoEngine.isRecording() == false) //comming back from pause.. will check if resume recording or previewing
+            gvideoEngine.resumePreview();
         else
-            videoEngine.resumeRecording();
+            gvideoEngine.resumeRecording();
     }
 
     @Override
@@ -116,11 +117,11 @@ public class Camera2VideoFragment extends Fragment
 
     @Override
     public void onPause() {
-        if (videoEngine != null)
-            if (videoEngine.isRecording() == false)
-                videoEngine.pausePreview();
+        if (gvideoEngine != null)
+            if (gvideoEngine.isRecording() == false)
+                gvideoEngine.pausePreview();
             else
-                videoEngine.pauseRecording();
+                gvideoEngine.pauseRecording();
         super.onPause();
     }
 
@@ -128,10 +129,10 @@ public class Camera2VideoFragment extends Fragment
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.recordButton: {
-                if (videoEngine.isRecording()) {
-                    videoEngine.stopRecording();
+                if (gvideoEngine.isRecording()) {
+                    gvideoEngine.stopRecording();
                 } else {
-                    videoEngine.startRecording();
+                    gvideoEngine.startRecording();
                 }
                 break;
             }

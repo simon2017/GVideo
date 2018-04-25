@@ -17,6 +17,7 @@
 package gvideo.sgutierc.cl.videorecorder;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -47,8 +48,6 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import gvideo.sgutierc.cl.location.LocationRecorder;
-import gvideo.sgutierc.cl.util.Miscelaneous;
 import gvideo.sgutierc.cl.util.ViewFunctions;
 import gvideo.sgutierc.cl.view.AutoFitTextureView;
 import gvideo.sgutierc.cl.view.Camera2VideoFragment;
@@ -90,19 +89,19 @@ public class VideoEngine implements Recorder {
     /**
      * An {@link AutoFitTextureView} for camera preview.
      */
-    private AutoFitTextureView mTextureView;
+    protected AutoFitTextureView mTextureView;
 
 
     /**
      * A reference to the opened {@link android.hardware.camera2.CameraDevice}.
      */
-    private static CameraDevice mCameraDevice;
+    protected static CameraDevice mCameraDevice;
 
     /**
      * A reference to the current {@link android.hardware.camera2.CameraCaptureSession} for
      * preview.
      */
-    private CameraCaptureSession mPreviewSession;
+    protected CameraCaptureSession mPreviewSession;
 
     /**
      * {@link TextureView.SurfaceTextureListener} handles several lifecycle events on a
@@ -141,7 +140,7 @@ public class VideoEngine implements Recorder {
     /**
      * The {@link android.util.Size} of camera preview.
      */
-    private Size mPreviewSize;
+    protected Size mPreviewSize;
 
     /**
      * The {@link android.util.Size} of video recording.
@@ -151,12 +150,12 @@ public class VideoEngine implements Recorder {
     /**
      * MediaRecorder
      */
-    private MediaRecorder mMediaRecorder;
+    private MediaRecorder mediaRecorder;
 
     /**
      * Whether the app is recording video now
      */
-    private boolean mIsRecordingVideo;
+    private boolean isRecording;
 
     /**
      * An additional thread for running tasks that shouldn't block the UI.
@@ -209,20 +208,15 @@ public class VideoEngine implements Recorder {
 
     };
     private Integer mSensorOrientation;
-    private String mNextVideoAbsolutePath;
+    private String videoPath;
     private CaptureRequest.Builder mPreviewBuilder;
     private Activity activity;
     private PathProvider pathProvider;
-    private LocationRecorder recorder;
-    private LocationEngine locationEngine;
 
-    public VideoEngine(Activity activity, AutoFitTextureView mTextureView, PathProvider pathProvider, LocationEngine locationEngine) {
+    public VideoEngine(Activity activity, AutoFitTextureView mTextureView, PathProvider pathProvider) {
         this.activity = activity;
         this.mTextureView = mTextureView;
         this.pathProvider = pathProvider;
-        this.locationEngine = locationEngine;
-        //and now start listening locations
-        recorder = new LocationRecorder(activity);
     }
 
     protected Activity getActivity() {
@@ -289,7 +283,7 @@ public class VideoEngine implements Recorder {
                 mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
             }
             configureTransform(width, height, mTextureView, mPreviewSize, getActivity());
-            mMediaRecorder = new MediaRecorder();
+            mediaRecorder = new MediaRecorder();
             manager.openCamera(cameraId, mStateCallback, null);
         } catch (CameraAccessException e) {
             Toast.makeText(activity, "Cannot access the camera.", Toast.LENGTH_SHORT).show();
@@ -313,9 +307,9 @@ public class VideoEngine implements Recorder {
                 mCameraDevice.close();
                 mCameraDevice = null;
             }
-            if (null != mMediaRecorder) {
-                mMediaRecorder.release();
-                mMediaRecorder = null;
+            if (null != mediaRecorder) {
+                mediaRecorder.release();
+                mediaRecorder = null;
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera closing.");
@@ -350,32 +344,32 @@ public class VideoEngine implements Recorder {
         if (null == activity) {
             return;
         }
-        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        if (mNextVideoAbsolutePath == null || mNextVideoAbsolutePath.isEmpty()) {
-            mNextVideoAbsolutePath = pathProvider.getPath();
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        if (videoPath == null || videoPath.isEmpty()) {
+            videoPath = pathProvider.getPath();
         }
-        mMediaRecorder.setOutputFile(mNextVideoAbsolutePath);
-        mMediaRecorder.setVideoEncodingBitRate(10000000);
-        mMediaRecorder.setVideoFrameRate(30);
-        mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
-        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mediaRecorder.setOutputFile(videoPath);
+        mediaRecorder.setVideoEncodingBitRate(10000000);
+        mediaRecorder.setVideoFrameRate(30);
+        mediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
         switch (mSensorOrientation) {
             case SENSOR_ORIENTATION_DEFAULT_DEGREES:
-                mMediaRecorder.setOrientationHint(DEFAULT_ORIENTATIONS.get(rotation));
+                mediaRecorder.setOrientationHint(DEFAULT_ORIENTATIONS.get(rotation));
                 break;
             case SENSOR_ORIENTATION_INVERSE_DEGREES:
-                mMediaRecorder.setOrientationHint(INVERSE_ORIENTATIONS.get(rotation));
+                mediaRecorder.setOrientationHint(INVERSE_ORIENTATIONS.get(rotation));
                 break;
         }
-        mMediaRecorder.prepare();
+        mediaRecorder.prepare();
     }
 
     public boolean isRecording() {
-        return this.mIsRecordingVideo;
+        return this.isRecording;
     }
 
 
@@ -398,10 +392,10 @@ public class VideoEngine implements Recorder {
         @Override
         public void run() {
             // UI
-            superInstance.mIsRecordingVideo = true;
+            superInstance.isRecording = true;
 
             // Start recording
-            superInstance.mMediaRecorder.start();
+            superInstance.mediaRecorder.start();
         }
 
         @Override
@@ -449,10 +443,6 @@ public class VideoEngine implements Recorder {
             return;
         }
         try {
-            //inicia mecanismo de geolocalización
-            recorder.init();
-            recorder.start(locationEngine);
-
             closePreviewSession();
             setUpMediaRecorder();
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
@@ -467,7 +457,7 @@ public class VideoEngine implements Recorder {
             mPreviewBuilder.addTarget(previewSurface);
 
             // Set up Surface for the MediaRecorder
-            Surface recorderSurface = mMediaRecorder.getSurface();
+            Surface recorderSurface = mediaRecorder.getSurface();
             surfaces.add(recorderSurface);
             mPreviewBuilder.addTarget(recorderSurface);
 
@@ -478,42 +468,56 @@ public class VideoEngine implements Recorder {
             e.printStackTrace();
         }
     }
+    protected String getVideoPath(){
+        return this.videoPath;
+    }
 
     public void stopRecording() {
-        // UI
-        mIsRecordingVideo = false;
+        isRecording = false;
         // Stop recording
-        mMediaRecorder.stop();
-        mMediaRecorder.reset();
+        mediaRecorder.stop();
+        mediaRecorder.reset();
 
-        //Stop listening GPS data
-        //TODO guardar en metadata de archivo
-        locationEngine.removeHandler(recorder);
-        recorder.stop();
-        try {
-            byte[] locations = recorder.getBytes();
-            System.out.println(Miscelaneous.print(locations));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         Activity activity = getActivity();
         if (null != activity) {
-            Toast.makeText(activity, "Video saved: " + mNextVideoAbsolutePath,
+            Toast.makeText(activity, "Video saved: " + videoPath,
                     Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Video saved: " + mNextVideoAbsolutePath);
+            Log.d(TAG, "Video saved: " + videoPath);
         }
-        mNextVideoAbsolutePath = null;
+        videoPath = null;
         startPreview();
     }
 
-    public void pauseRecording() {
-//TODO
+    private boolean isVersionMajor() {
+        return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N;
     }
+
+    public void pauseRecording() {
+        if (isVersionMajor()) {
+            pauseRecordingMajor();
+        } else {
+            stopRecording();
+        }
+    }
+
+    @TargetApi(android.os.Build.VERSION_CODES.N)
+    protected void pauseRecordingMajor() {
+        mediaRecorder.pause();
+    }
+
 
     public void resumeRecording() {
-//TODO
+        if (isVersionMajor()) {
+            resumeRecordingMajor();
+        } else {
+            startRecording();
+        }
     }
 
+    @TargetApi(android.os.Build.VERSION_CODES.N)
+    protected void resumeRecordingMajor() {
+        mediaRecorder.resume();
+    }
 
     /**
      * Previewing methods
@@ -538,11 +542,6 @@ public class VideoEngine implements Recorder {
         }
     }
 
-    public void pausePreview() {
-        closeCamera();
-        stopBackgroundThread();
-    }
-
     public void startPreview() {
         startBackgroundThread();
         if (mTextureView.isAvailable()) {
@@ -552,18 +551,15 @@ public class VideoEngine implements Recorder {
         }
     }
 
-    public void resumePreview(){
-        startBackgroundThread();
-        if (mTextureView.isAvailable()) {
-            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
-        } else {
-            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
-        }
+    public void pausePreview() {
+        stopPreview();
     }
 
+    public void resumePreview() {
+        startPreview();
+    }
 
     public void stopPreview() {
-        //TODO
         closeCamera();
         stopBackgroundThread();
     }

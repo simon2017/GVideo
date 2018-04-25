@@ -20,6 +20,8 @@ import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 
+import com.google.android.gms.drive.Drive;
+
 import gvideo.sgutierc.cl.videorecorder.LocationEngine;
 import gvideo.sgutierc.cl.videorecorder.R;
 import gvideo.sgutierc.cl.view.Camera2VideoFragment;
@@ -35,7 +37,6 @@ public class CameraActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if (null == savedInstanceState) {
-
             locationEngine = new LocationEngine(this);
 
             //add camera fragment
